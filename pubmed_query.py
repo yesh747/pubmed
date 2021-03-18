@@ -15,7 +15,6 @@ import xml.etree.ElementTree as xml
 
 # TODO:
     # - put in email into my request
-    # - set request limit on query class
 
 
 class PubMedArticle():
@@ -81,6 +80,7 @@ class PubMedQuery():
                  BASE_URL='https://eutils.ncbi.nlm.nih.gov/entrez/eutils/', 
                  DB='pubmed',
                  RESULTS_PER_QUERY=1000,
+                 limit = 100,
                  print_xml=False):
         self.BASE_URL = BASE_URL
         self.DB = DB
@@ -88,15 +88,19 @@ class PubMedQuery():
         self.query = query
         
         # query
-        self.pmids, self.count, self.querytranslation = self.__query_pmids__(self.query)
-        print('{} results for: {}'.format(self.count, self.querytranslation))
-        self.articles = self.__query_articles__(self.pmids, print_xml=print_xml)
+        self.pmids, self.count, self.querytranslation, self.max_results = self.__query_pmids__(self.query, limit)
+        print('{}/{} results for: {}'.format(self.count, self.max_results, self.querytranslation))
+
+        self.articles = self.__query_articles__(self.pmids, limit, print_xml)
         
         
-    def __query_pmids__(self, query):
+    def __query_pmids__(self, query, limit):
         pmids = []
         retstart = 0
-        count = 999999
+        if limit:
+            count = limit
+        else:
+            count = 999999
         
         while retstart < count:  
             url = '{}esearch.fcgi?db={}&term={}&retmax={}&retmode=json&usehistory=y&retstart={}'.format(
@@ -105,27 +109,36 @@ class PubMedQuery():
             r.raise_for_status()
             r = r.json()['esearchresult']
             querytranslation = r['querytranslation']
-            count = int(r['count'])
             retstart = retstart + self.RESULTS_PER_QUERY
             pmids = pmids + r['idlist']
             time.sleep(0.34)     
+            if not limit:
+                count = int(r['count'])
             
-        return pmids, count, querytranslation
+        max_results = r['count']
+            
+        return pmids, count, querytranslation, max_results
              
     
-    def __query_articles__(self, pmids, print_xml):
+    def __query_articles__(self, pmids, limit, print_xml):
         articles = []
         for pmid in pmids:
+            if len(articles) > limit:
+                break
+            
             article = PubMedArticle(pmid, self.BASE_URL, self.DB, print_xml)
             articles.append(article)
             time.sleep(0.34)
+            
+
         return articles
     
     
 if __name__ == '__main__':
     
     
-    query = PubMedQuery('Timothy Shim') 
+    query = PubMedQuery('"(Head Neck"[Journal]) AND ("2018"[Date - Publication] : "2019"[Date - Publication])',
+                        limit=10) 
     
     
     for article in query.articles:
