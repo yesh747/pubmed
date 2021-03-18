@@ -84,7 +84,9 @@ class PubMedArticle():
             print(self.pmid)
             raise(AttributeError)
         
-    def print_xml(self, xml_item):
+    def print_xml(self, xml_item=None):
+        if xml_item==None:
+            xml_item = self.root
         print(xml.tostring(xml_item, encoding='utf8').decode('utf8'))
 
 
@@ -110,7 +112,7 @@ class PubMedQuery():
     def __init__(self, query,
                  BASE_URL='https://eutils.ncbi.nlm.nih.gov/entrez/eutils/', 
                  DB='pubmed',
-                 RESULTS_PER_QUERY=1000,
+                 RESULTS_PER_QUERY=100000,
                  print_xml=False):
         self.BASE_URL = BASE_URL
         self.DB = DB
@@ -161,8 +163,8 @@ class PubMedQuery():
 if __name__ == '__main__':
     
     
-    query = PubMedQuery('("Head Neck"[Journal]) AND ("2020"[Date - Publication] : "2020"[Date - Publication])') 
-        
+    query = PubMedQuery('("Head Neck"[Journal])') 
+    
     for article in query.articles:
         print('-'*75)
         print(article.title)
