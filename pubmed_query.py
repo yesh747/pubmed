@@ -10,7 +10,10 @@ Created on Wed Mar 17 19:08:14 2021
 import time
 import requests
 import xml.etree.ElementTree as xml
-import pickle
+
+# TODO
+# - get keywords from article
+
 
 
 class PubMedArticle():
@@ -202,18 +205,38 @@ class PubMedQuery():
             articleList = PubMedArticleList(pmid_chunk, self.BASE_URL, self.DB, print_xml)
             articles = articles + articleList.articles
             
-
         return articles
     
     
 if __name__ == '__main__':
     
-    
-    # using cited by will slow querying down to 3 articles/second because you have to find all the articles that cite the original article
+    journals = ['Am J Otolaryngol',
+                'Clin Otolaryngol',
+                'Ear and hearing',
+                'Ear Nose Throat J',
+                'Eur Arch Otorhinolaryngol',
+                'Head Neck',
+                'Int Forum Allergy Rhinol',
+                'Int J Pediatr Otorhinolaryngol',
+                'JAMA Facial Plast Surg',
+                'JAMA Otolaryngol Head Neck Surg', 
+                'J Assoc Res Otolaryngol',
+                'J Voice',
+                'J Laryngol Otol',
+                'J Neurol Surg B Skull Base',
+                'Laryngoscope', 
+                'Laryngoscope Investig Otolaryngol'
+                'Oral Oncol',
+                'Otolaryngol Clin North Am',
+                'Otol Neurotol',
+                'Otolaryngol Head Neck Surg',
+                'Rhinology', 
+                ]
+    query_text = '("' + '"[Journal]) OR ("'.join(journals) + '"[Journal])'
     
     t0 = time.time()
-    query = PubMedQuery('("Head Neck"[Journal])',)
-    print('Time to Run Query: {}'.format(time.time() - t0))
+    query = PubMedQuery(query_text)
+    print('\nTime to Run Query: {:2f}min'.format((time.time() - t0)/50))
     
     
     
