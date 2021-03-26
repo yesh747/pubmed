@@ -23,7 +23,7 @@ class PubMedArticle():
         self.root = article_xml
         
         # initialize citedByPMIDs
-        self.citedByPMIDs = None
+        self.citedByPMIDs = []
         
         if print_xml:
             self.print_xml(self.root)
@@ -80,6 +80,30 @@ class PubMedArticle():
                         'affiliation': affiliation,
                         })
                     
+            # Keywords
+            keywordlist = self.root.findall(articlePath + '../KeywordList/Keyword')
+            self.keywords = []
+            for keyword in keywordlist:
+                self.keywords.append(keyword.text)
+                
+                
+            # MAJOR Mesh headings
+            meshheading_major_list = self.root.findall(articlePath + '../MeshHeadingList/MeshHeading/*[@MajorTopicYN="Y"]')
+            self.meshheadings_major = []
+            for meshheading_major in meshheading_major_list:
+                self.meshheadings_major.append(meshheading_major.text)    
+            # - remove duplicates
+            self.meshheadings_major = list(dict.fromkeys(self.meshheadings_major))
+
+
+            # MINOR mesh headings
+            meshheading_minor_list = self.root.findall(articlePath + '../MeshHeadingList/MeshHeading/*[@MajorTopicYN="N"]')
+            self.meshheadings_minor = []
+            for meshheading_minor in meshheading_minor_list:
+                self.meshheadings_minor.append(meshheading_minor.text) 
+            # - remove duplicates
+            self.meshheadings_minor = list(dict.fromkeys(self.meshheadings_minor))
+            
         except AttributeError:
             self.print_xml(self.root)
             print(self.title)
@@ -142,11 +166,7 @@ class PubMedArticleList():
                         for article in self.articles:
                             if article.pmid == linkset_pmid:
                                 article.add_citedByData(citedByPMIDs)
-                                    
-                            
-            
-            
-
+                                
 
 
 class PubMedQuery():
@@ -236,18 +256,32 @@ if __name__ == '__main__':
     
     t0 = time.time()
     query = PubMedQuery(query_text)
-    print('\nTime to Run Query: {:2f}min'.format((time.time() - t0)/50))
+    print('\nTime to Run Query: {:2f}min'.format((time.time() - t0)/60))
     
     
-    
+    i=0
     for article in query.articles:
         print('-'*75)
         print(article.title)
         print(article.citedByPMIDs)
+        print(article.keywords)
+        print(article.meshheadings_major)
+        print(article.meshheadings_minor)
+        print(article.pubdate)
 
         # print(article.abstract)
-        # print(article.pubdate)
         # print(article.authors)
+              
+        # count single authors pubs
+        if len(article.authors) == 1:
+            for author in article.authors:
+                if author['firstname'] == None:
+                    continue
+                if len(author['firstname'].split(' ')[0]) > 1:
+                    print('{} {}'.format(author['firstname'], author['lastname']))
+                    i+=1                 
+    print(i)
+    
 
     
     
