@@ -7,13 +7,15 @@ Created on Wed Mar 17 19:08:14 2021
 
 @author: yesh
 """
+import os
+
 import time
+import numpy as np
+import pandas as pd
 import requests
 import xml.etree.ElementTree as xml
 
-# TODO
-# - get keywords from article
-
+from datetime import date
 
 
 class PubMedArticle():
@@ -42,7 +44,7 @@ class PubMedArticle():
             month = pubdate.find('Month').text
             day = pubdate.find('Day').text
             
-            self.pubdate = {'year': year, 'month': month, 'day': day}
+            self.pubdate = date(int(year), int(month), int(day))
             
             self.title = self.root.find(articlePath + 'ArticleTitle').text
             
@@ -124,7 +126,7 @@ class PubMedArticle():
 class PubMedArticleList():
     """
     - Input: list of pmids     
-    - Creates Object is list of PubMedArticles
+    - Creates Object that is a list of PubMedArticles
     """
     def __init__(self, pmids, BASE_URL, DB,  print_xml=False):
         # A. Get articles
@@ -225,6 +227,7 @@ class PubMedQuery():
             articleList = PubMedArticleList(pmid_chunk, self.BASE_URL, self.DB, print_xml)
             articles = articles + articleList.articles
             
+        print('\n')
         return articles
     
     
@@ -260,6 +263,8 @@ if __name__ == '__main__':
     
     
     i=0
+    author_list = []
+    firstname_list = []
     for article in query.articles:
         print('-'*75)
         print(article.title)
@@ -268,9 +273,15 @@ if __name__ == '__main__':
         print(article.meshheadings_major)
         print(article.meshheadings_minor)
         print(article.pubdate)
+        print(article.authors)
+        for author in article.authors:
+            if not author['firstname']:
+                continue
+            if len(author['firstname']) > 1:
+                author_list.append('{} {}'.format(author['firstname'], author['lastname']))
+                firstname_list.append('{}'.format(author['firstname']))
 
         # print(article.abstract)
-        # print(article.authors)
               
         # count single authors pubs
         if len(article.authors) == 1:
@@ -281,7 +292,55 @@ if __name__ == '__main__':
                     print('{} {}'.format(author['firstname'], author['lastname']))
                     i+=1                 
     print(i)
+    print(len(np.unique(author_list)))
     
+    
+    
+    
+    
+    
+    # SEE HOW MANY FIRSTNAMES ARE IN OUR DATABASE
+    # PARAMS
+    DATADIR = '../name_classifier/data'
+    
+    
+    # 1. Load data
+    data_fps = [os.path.join(DATADIR,file) for file in os.listdir(DATADIR) if file.endswith('.txt')]
+    
+    colnames = ['name', 'sex', 'freq']
+    df = pd.DataFrame(columns=colnames)
+    for fp in data_fps:
+        df_sub = pd.read_csv(fp, header=None)
+        df_sub.columns = colnames
+        df = df.append(df_sub)
+        
+    # - convert sex to binary
+    df['sex'] = np.where(df['sex'] == 'M', 1, 0)
+        
+    # - drop repeats
+    df = df.groupby(['name', 'sex'], as_index=False).agg('sum')
+    
+    # - count how many male only and how many female only
+    female_names = df[df['sex'] == 0]['name'].str.lower()
+    male_names = df[df['sex'] == 1]['name'].str.lower()
+    both_names = np.intersect1d(female_names, male_names)
+    female_names = set(both_names) ^ set(female_names)
+    male_names =  set(both_names) ^ set(male_names)
+    
+    print('Only {} ({:.2f}%) names are both male and female'.format(len(both_names),
+                                                           100*len(both_names)/len(np.unique(df['name']))))
+    
+    i = 0
+    for name in np.unique(firstname_list):
+        name = name.split(' ')[0]
+        if name.lower() in male_names:
+            i += 1
+        elif name.lower() in female_names:
+            i += 1
+        else:
+            print(name)
+            
+    print(i/len(np.unique(firstname_list)))
 
     
     
