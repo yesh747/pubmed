@@ -299,53 +299,6 @@ if __name__ == '__main__':
     
     
     
-    # SEE HOW MANY FIRSTNAMES ARE IN OUR DATABASE
-    # PARAMS
-    DATADIR = '../name_classifier/data'
-    
-    
-    # 1. Load data
-    data_fps = [os.path.join(DATADIR,file) for file in os.listdir(DATADIR) if file.endswith('.txt')]
-    
-    colnames = ['name', 'sex', 'freq']
-    df = pd.DataFrame(columns=colnames)
-    for fp in data_fps:
-        df_sub = pd.read_csv(fp, header=None)
-        df_sub.columns = colnames
-        df = df.append(df_sub)
-        
-    # - convert sex to binary
-    df['sex'] = np.where(df['sex'] == 'M', 1, 0)
-        
-    # - drop repeats
-    df = df.groupby(['name', 'sex'], as_index=False).agg('sum')
-    
-    # - count how many male only and how many female only
-    female_names = df[df['sex'] == 0]['name'].str.lower()
-    male_names = df[df['sex'] == 1]['name'].str.lower()
-    both_names = np.intersect1d(female_names, male_names)
-    female_names = set(both_names) ^ set(female_names)
-    male_names =  set(both_names) ^ set(male_names)
-    
-    print('Only {} ({:.2f}%) names are both male and female'.format(len(both_names),
-                                                           100*len(both_names)/len(np.unique(df['name']))))
-    
-    i = 0
-    for name in np.unique(firstname_list):
-        name = name.split(' ')[0]
-        if name.lower() in male_names:
-            i += 1
-        elif name.lower() in female_names:
-            i += 1
-        else:
-            print(name)
-            
-    print(i/len(np.unique(firstname_list)))
-
-    
-    
-    
-    
     
     
     
