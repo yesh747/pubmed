@@ -36,7 +36,19 @@ class PubMedArticle():
             # METADATA
             self.journal = self.root.find(articlePath + 'Journal/Title').text
             self.journal_abbr = self.root.find(articlePath + 'Journal/ISOAbbreviation').text
-            self.pubtype = self.root.find(articlePath + 'PublicationTypeList/PublicationType').text
+            self.pubtypes = [pubtype.text for pubtype in self.root.findall(articlePath + 'PublicationTypeList/PublicationType')]
+
+            journal_issue_xml = self.root.find(articlePath + 'Journal/JournalIssue/Issue')
+            if journal_issue_xml is not None:
+                self.journal_issue = self.root.find(articlePath + 'Journal/JournalIssue/Issue').text
+            else:
+                self.journal_issue = None
+                
+            journal_volume_xml = self.root.find(articlePath + 'Journal/JournalIssue/Volume')
+            if journal_volume_xml is not None:
+                self.journal_volume = self.root.find(articlePath + 'Journal/JournalIssue/Volume').text
+            else:
+                self.journal_volume = None
             
             # DATE
             pubdate = self.root.find('./PubmedData/History/PubMedPubDate[@PubStatus="pubmed"]')
@@ -202,6 +214,7 @@ class PubMedQuery():
             r = requests.get(url)
             r.raise_for_status()
             r = r.json()['esearchresult']
+                
             querytranslation = r['querytranslation']
             retstart = retstart + self.RESULTS_PER_QUERY
             count = int(r['count'])
