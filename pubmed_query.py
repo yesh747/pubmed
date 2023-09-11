@@ -55,11 +55,11 @@ class PubMedArticle():
             year = pubdate.find('Year').text
             month = pubdate.find('Month').text
             day = pubdate.find('Day').text
-            
             self.pubdate = date(int(year), int(month), int(day))
             
             self.title = self.root.find(articlePath + 'ArticleTitle').text
             
+        
             # abstract
             self.abstract = self.root.findall('.//AbstractText')
             # need this step for when there are multiple abstract text objects
@@ -187,7 +187,7 @@ class PubMedQuery():
     def __init__(self, query,
                  BASE_URL='https://eutils.ncbi.nlm.nih.gov/entrez/eutils/', 
                  DB='pubmed',
-                 RESULTS_PER_QUERY=100000,
+                 RESULTS_PER_QUERY=100000, #pubmed  hard limit is 9999 pmids at a time
                  citedBy=True, # get articles that cite the queried articles - will slow down queries 
                  print_xml=False):
         self.BASE_URL = BASE_URL
@@ -199,6 +199,9 @@ class PubMedQuery():
         # query
         self.pmids, self.count, self.querytranslation = self.__query_pmids__(self.query)
         print('{} results for: {}'.format(self.count, self.querytranslation))
+        
+        if self.count > 9999:
+            raise Exception("TOO LARGE QUERY, BREAK DOWN INTO SMALLER =<9999 results per query")
 
         self.articles = self.__query_articles__(self.pmids, print_xml)
         
@@ -229,13 +232,13 @@ class PubMedQuery():
         return [lst[i:i + n] for i in range(0, len(lst), n)]
     
     def __query_articles__(self, pmids, print_xml):
-        count = len(pmids)
         articles = []
-        pmids = self.__chunk__(pmids, min(200, self.RESULTS_PER_QUERY))
+        pmid_chunks = self.__chunk__(pmids, min(200, self.RESULTS_PER_QUERY))
+        print('{} chunks of pmids'.format(len(pmid_chunks)))
         i = 0
-        for pmid_chunk in pmids:
+        for pmid_chunk in pmid_chunks:
             i += len(pmid_chunk)
-            print('\rGetting data on {}/{} articles'.format(i, count), end='')
+            print('\rGetting data on {}/{} articles'.format(i, len(pmids)), end='')
             
             articleList = PubMedArticleList(pmid_chunk, self.BASE_URL, self.DB, print_xml)
             articles = articles + articleList.articles
