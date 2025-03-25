@@ -246,7 +246,7 @@ class PubMedQuery():
         print('\n')
         return articles
     
-    def __dataframe__(self):
+    def __getdataframe__(self):
         df = {'pmid': [],
           'authors': [],
           'title': [],
