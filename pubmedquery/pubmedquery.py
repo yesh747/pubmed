@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Sandboxing with pubmed api
+PubMed API
 
 Created on Wed Mar 17 19:08:14 2021
 
@@ -246,69 +246,48 @@ class PubMedQuery():
         print('\n')
         return articles
     
+    def __dataframe__(self):
+        df = {'pmid': [],
+          'authors': [],
+          'title': [],
+          'abstract': [],
+          'pubdate': [],
+          'keywords': [],
+          'meshheadings_major': [],
+          'meshheadings_minor': [],
+          'citedByPMIDs': [],
+          'citation_count': [],
+          'journal': [],
+          'journal_abbr': [],
+          'journal_volume': [],
+          'journal_issue': [],
+          'pubtypes': [],
+          }
+    
+        for i, article in enumerate(self.articles):
+            #print('\r{} : {}'.format(i, article.pmid), end='')
+        
+            df['pmid'].append(article.pmid)
+            df['authors'].append(article.authors)                   
+            df['title'].append(article.title)
+            df['abstract'].append(article.abstract)
+            df['pubdate'].append(article.pubdate)
+            df['keywords'].append(article.keywords)
+            df['meshheadings_major'].append(article.meshheadings_major)
+            df['meshheadings_minor'].append(article.meshheadings_minor)
+            df['citedByPMIDs'].append(article.citedByPMIDs)
+            df['citation_count'].append(len(article.citedByPMIDs))
+            df['journal'].append(article.journal)
+            df['journal_abbr'].append(article.journal_abbr)
+            df['journal_volume'].append(article.journal_volume)
+            df['journal_issue'].append(article.journal_issue)
+            df['pubtypes'].append(article.pubtypes)
+            print('\n')
+        return pd.DataFrame(df)
+    
     
 if __name__ == '__main__':
-    
-    journals = ['Am J Otolaryngol',
-                'Clin Otolaryngol',
-                'Ear and hearing',
-                'Ear Nose Throat J',
-                'Eur Arch Otorhinolaryngol',
-                'Head Neck',
-                'Int Forum Allergy Rhinol',
-                'Int J Pediatr Otorhinolaryngol',
-                'JAMA Facial Plast Surg',
-                'JAMA Otolaryngol Head Neck Surg', 
-                'J Assoc Res Otolaryngol',
-                'J Voice',
-                'J Laryngol Otol',
-                'J Neurol Surg B Skull Base',
-                'Laryngoscope', 
-                'Laryngoscope Investig Otolaryngol'
-                'Oral Oncol',
-                'Otolaryngol Clin North Am',
-                'Otol Neurotol',
-                'Otolaryngol Head Neck Surg',
-                'Rhinology', 
-                ]
-    query_text = '("' + '"[Journal]) OR ("'.join(journals) + '"[Journal])'
-    
-    t0 = time.time()
-    query = PubMedQuery(query_text)
-    print('\nTime to Run Query: {:2f}min'.format((time.time() - t0)/60))
-    
-    
-    i=0
-    author_list = []
-    firstname_list = []
-    for article in query.articles:
-        print('-'*75)
-        print(article.title)
-        print(article.citedByPMIDs)
-        print(article.keywords)
-        print(article.meshheadings_major)
-        print(article.meshheadings_minor)
-        print(article.pubdate)
-        print(article.authors)
-        for author in article.authors:
-            if not author['firstname']:
-                continue
-            if len(author['firstname']) > 1:
-                author_list.append('{} {}'.format(author['firstname'], author['lastname']))
-                firstname_list.append('{}'.format(author['firstname']))
-
-        # print(article.abstract)
-              
-        # count single authors pubs
-        if len(article.authors) == 1:
-            for author in article.authors:
-                if author['firstname'] == None:
-                    continue
-                if len(author['firstname'].split(' ')[0]) > 1:
-                    print('{} {}'.format(author['firstname'], author['lastname']))
-                    i+=1                 
-    print(i)
-    print(len(np.unique(author_list)))
+    print('PubMedQuery API')
     
     
     
