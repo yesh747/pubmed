@@ -233,7 +233,7 @@ class PubMedQuery():
     
     def __query_articles__(self, pmids, print_xml):
         articles = []
-        pmid_chunks = self.__chunk__(pmids, min(200, self.RESULTS_PER_QUERY))
+        pmid_chunks = self.__chunk__(pmids, min(100, self.RESULTS_PER_QUERY))
         print('{} chunks of pmids'.format(len(pmid_chunks)))
         i = 0
         for pmid_chunk in pmid_chunks:
@@ -290,7 +290,11 @@ if __name__ == '__main__':
     print('PubMedQuery API')
     
     
-    
+    query_text = """
+            ("the laryngoscope"[Journal]) AND 
+            (("2024/03/01"[Date - Publication] : "2025/12/31"[Date - Publication]))
+            """
+    query = PubMedQuery(query_text)
     
     
     
