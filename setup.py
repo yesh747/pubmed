@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pubmedquery',
-    version='0.1.8',
+    version='0.1.9',
     author='Yeshwant Chillakuru',
     description='A Python package to download data from PubMed',
     long_description='Please refer to the GitHub page for more information / documentation',

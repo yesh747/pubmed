@@ -189,13 +189,14 @@ class PubMedQuery():
                  DB='pubmed',
                  RESULTS_PER_QUERY=100000, #pubmed  hard limit is 9999 pmids at a time
                  citedBy=True, # get articles that cite the queried articles - will slow down queries 
-                 print_xml=False):
+                 print_xml=False,
+                 chunk_size=100): #chunk size - larger batches/chunks will cause pubmed to crash
         self.BASE_URL = BASE_URL
         self.DB = DB
         self.RESULTS_PER_QUERY = RESULTS_PER_QUERY
         self.query = query
         self.citedBy=citedBy
-        
+
         # query
         self.pmids, self.count, self.querytranslation = self.__query_pmids__(self.query)
         print('{} results for: {}'.format(self.count, self.querytranslation))
@@ -203,7 +204,7 @@ class PubMedQuery():
         if self.count > 9999:
             raise Exception("TOO LARGE QUERY, BREAK DOWN INTO SMALLER =<9999 results per query")
 
-        self.articles = self.__query_articles__(self.pmids, print_xml)
+        self.articles = self.__query_articles__(self.pmids, print_xml, chunk_size)
         
         
     def __query_pmids__(self, query):
@@ -231,9 +232,9 @@ class PubMedQuery():
         """Yield successive n-sized chunks from lst."""
         return [lst[i:i + n] for i in range(0, len(lst), n)]
     
-    def __query_articles__(self, pmids, print_xml):
+    def __query_articles__(self, pmids, print_xml, chunk_size):
         articles = []
-        pmid_chunks = self.__chunk__(pmids, min(100, self.RESULTS_PER_QUERY))
+        pmid_chunks = self.__chunk__(pmids, min(chunk_size, self.RESULTS_PER_QUERY))
         print('{} chunks of pmids'.format(len(pmid_chunks)))
         i = 0
         for pmid_chunk in pmid_chunks:
