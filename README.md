@@ -9,5 +9,5 @@ Example of creating a query. Note that because of pubmed api restrictions,  quer
 
     query_text = "randomized control trial of radiation vs surgery for oropharynx SCC"
     query = PubMedQuery(query_text) # an array of PubMedArticle objects
-    df = query.__dataframe__() # create pandas dataframe
+    df = query.__getdataframe__() # create pandas dataframe
     df.to_csv('filepath.csv', index=Flase)
