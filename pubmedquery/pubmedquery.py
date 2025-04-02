@@ -167,11 +167,13 @@ class PubMedArticleList():
                 DB, 
                 linkname,
                 '&id='.join(pmids))
+            if self.api_key:
+                link_url += '&api_key={}'.format(self.api_key)
             r_link = requests.get(link_url)
             r_link.raise_for_status()
             r_link = r_link.json()
             linksets = r_link['linksets']
-            time.sleep(0.34)     
+            time.sleep(time_delay)     
             
             # looping through nonsense to get to the IDs for articles that cite the PMID articles
             for linkset in linksets:
