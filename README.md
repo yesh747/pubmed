@@ -16,6 +16,7 @@ Example of creating a query. Note that because of pubmed api restrictions,  quer
                 time_delay=0.34, # the minimum to avoid timing out. increase if timeout errors
                 citedBy=False, # make True to get array of pmids that cite the current article, 
                 chunk_size=100, # break up into miniqueuries of n=100. increase if getting errors from pubmed client
+                api_key="API_KEY", #allow you to reduce time_delay to 0.1 and inc chunk size to 100
                 ) 
 
     df = query.__getdataframe__() # create pandas dataframe
