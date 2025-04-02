@@ -140,13 +140,13 @@ class PubMedArticleList():
     - Input: list of pmids     
     - Creates Object that is a list of PubMedArticles
     """
-    def __init__(self, pmids, BASE_URL, DB,  print_xml=False):
+    def __init__(self, pmids, BASE_URL, DB, citedBy, time_delay, print_xml=False):
         # A. Get articles
         url = '{}efetch.fcgi?db={}&id={}&retmode=xml'.format(BASE_URL, DB, pmids)
         r = requests.get(url)
         r.raise_for_status()
         root = xml.fromstring(r.text)
-        time.sleep(0.34)
+        time.sleep(time_delay)
         
 
         self.root = root
@@ -156,31 +156,32 @@ class PubMedArticleList():
             self.articles.append(PubMedArticle(article_xml, print_xml=print_xml))
           
         # B. Get articles that cite the queried articles.
-        linkname =  '{}_pubmed_citedin'.format(DB)
-        link_url = '{}/elink.fcgi?dbfrom={}&linkname={}&id={}&retmode=json'.format(
-            BASE_URL, 
-            DB, 
-            linkname,
-            '&id='.join(pmids))
-        r_link = requests.get(link_url)
-        r_link.raise_for_status()
-        r_link = r_link.json()
-        linksets = r_link['linksets']
-        time.sleep(0.34)     
-        
-        # looping through nonsense to get to the IDs for articles that cite the PMID articles
-        for linkset in linksets:
-            linkset_pmid = linkset['ids'][0]
-            assert(len(linkset['ids']) == 1)
-            if 'linksetdbs' in linkset.keys():
-                for linksetdb in linkset['linksetdbs']:
-                    if (linksetdb['linkname'] == linkname) and ('links' in linksetdb.keys()):
-                        links = linksetdb['links']
-                        citedByPMIDs = links
-                        for article in self.articles:
-                            if article.pmid == linkset_pmid:
-                                article.add_citedByData(citedByPMIDs)
-                                
+        if citedBy:
+            linkname =  '{}_pubmed_citedin'.format(DB)
+            link_url = '{}/elink.fcgi?dbfrom={}&linkname={}&id={}&retmode=json'.format(
+                BASE_URL, 
+                DB, 
+                linkname,
+                '&id='.join(pmids))
+            r_link = requests.get(link_url)
+            r_link.raise_for_status()
+            r_link = r_link.json()
+            linksets = r_link['linksets']
+            time.sleep(0.34)     
+            
+            # looping through nonsense to get to the IDs for articles that cite the PMID articles
+            for linkset in linksets:
+                linkset_pmid = linkset['ids'][0]
+                assert(len(linkset['ids']) == 1)
+                if 'linksetdbs' in linkset.keys():
+                    for linksetdb in linkset['linksetdbs']:
+                        if (linksetdb['linkname'] == linkname) and ('links' in linksetdb.keys()):
+                            links = linksetdb['links']
+                            citedByPMIDs = links
+                            for article in self.articles:
+                                if article.pmid == linkset_pmid:
+                                    article.add_citedByData(citedByPMIDs)
+                                    
 
 
 class PubMedQuery():
@@ -190,12 +191,15 @@ class PubMedQuery():
                  RESULTS_PER_QUERY=100000, #pubmed  hard limit is 9999 pmids at a time
                  citedBy=True, # get articles that cite the queried articles - will slow down queries 
                  print_xml=False,
-                 chunk_size=100): #chunk size - larger batches/chunks will cause pubmed to crash
+                 chunk_size=100, #chunk size - larger batches/chunks will cause pubmed to crash
+                 time_delay=0.34, # time delay between queries - increase if you get rate limit errors
+                 ): 
         self.BASE_URL = BASE_URL
         self.DB = DB
         self.RESULTS_PER_QUERY = RESULTS_PER_QUERY
         self.query = query
         self.citedBy=citedBy
+        self.time_delay = time_delay
 
         # query
         self.pmids, self.count, self.querytranslation = self.__query_pmids__(self.query)
@@ -223,7 +227,7 @@ class PubMedQuery():
             retstart = retstart + self.RESULTS_PER_QUERY
             count = int(r['count'])
             pmids = pmids + r['idlist']
-            time.sleep(0.34)    
+            time.sleep(self.time_delay)    
             
                         
         return pmids, count, querytranslation
@@ -241,10 +245,9 @@ class PubMedQuery():
             i += len(pmid_chunk)
             print('\rGetting data on {}/{} articles'.format(i, len(pmids)), end='')
             
-            articleList = PubMedArticleList(pmid_chunk, self.BASE_URL, self.DB, print_xml)
+            articleList = PubMedArticleList(pmid_chunk, self.BASE_URL, self.DB, self.citedBy, self.time_delay, print_xml)
             articles = articles + articleList.articles
             
-        print('\n')
         return articles
     
     def __getdataframe__(self):
@@ -283,7 +286,7 @@ class PubMedQuery():
             df['journal_volume'].append(article.journal_volume)
             df['journal_issue'].append(article.journal_issue)
             df['pubtypes'].append(article.pubtypes)
-            print('\n')
+            #print('\n')
         return pd.DataFrame(df)
     
     
@@ -296,6 +299,9 @@ if __name__ == '__main__':
             (("2024/03/01"[Date - Publication] : "2025/12/31"[Date - Publication]))
             """
     query = PubMedQuery(query_text)
+    query_df = query.__getdataframe__()
+    print(query_df.head())
+    print('size: {}'.format(query_df.shape))
     
     
     

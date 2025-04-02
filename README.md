@@ -10,8 +10,13 @@ Example of creating a query. Note that because of pubmed api restrictions,  quer
 
     from pubmedquery import PubMedQuery
 
+    # get an array of PubMedArticle objects
     query_text = "randomized control trial of radiation vs surgery for oropharynx SCC"
-    query = PubMedQuery(query_text) # an array of PubMedArticle objects
+    query = PubMedQuery(query_text,
+                time_delay=0.34, # the minimum to avoid timing out. increase if timeout errors
+                citedBy=False, # make True to get array of pmids that cite the current article, 
+                chunk_size=100, # break up into miniqueuries of n=100. increase if getting errors from pubmed client
+                ) 
 
     df = query.__getdataframe__() # create pandas dataframe
     df.to_csv('filepath.csv', index=Flase)
