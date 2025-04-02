@@ -140,9 +140,13 @@ class PubMedArticleList():
     - Input: list of pmids     
     - Creates Object that is a list of PubMedArticles
     """
-    def __init__(self, pmids, BASE_URL, DB, citedBy, time_delay, print_xml=False):
+    def __init__(self, pmids, BASE_URL, DB, citedBy, time_delay, print_xml=False, api_key=None):
+        self.api_key = api_key
+
         # A. Get articles
         url = '{}efetch.fcgi?db={}&id={}&retmode=xml'.format(BASE_URL, DB, pmids)
+        if self.api_key:
+                url += '&api_key={}'.format(self.api_key)
         r = requests.get(url)
         r.raise_for_status()
         root = xml.fromstring(r.text)
@@ -193,6 +197,7 @@ class PubMedQuery():
                  print_xml=False,
                  chunk_size=100, #chunk size - larger batches/chunks will cause pubmed to crash
                  time_delay=0.34, # time delay between queries - increase if you get rate limit errors
+                 api_key = None, # NCBI API key - optional, but recommended to avoid rate limits
                  ): 
         self.BASE_URL = BASE_URL
         self.DB = DB
@@ -200,6 +205,7 @@ class PubMedQuery():
         self.query = query
         self.citedBy=citedBy
         self.time_delay = time_delay
+        self.api_key = api_key
 
         # query
         self.pmids, self.count, self.querytranslation = self.__query_pmids__(self.query)
@@ -219,6 +225,8 @@ class PubMedQuery():
         while retstart < count:  
             url = '{}esearch.fcgi?db={}&term={}&retmax={}&retmode=json&retstart={}'.format(
                     self.BASE_URL, self.DB, self.query, self.RESULTS_PER_QUERY, retstart)
+            if self.api_key:
+                url += '&api_key={}'.format(self.api_key)
             r = requests.get(url)
             r.raise_for_status()
             r = r.json()['esearchresult']
@@ -245,7 +253,7 @@ class PubMedQuery():
             i += len(pmid_chunk)
             print('\rGetting data on {}/{} articles'.format(i, len(pmids)), end='')
             
-            articleList = PubMedArticleList(pmid_chunk, self.BASE_URL, self.DB, self.citedBy, self.time_delay, print_xml)
+            articleList = PubMedArticleList(pmid_chunk, self.BASE_URL, self.DB, self.citedBy, self.time_delay, print_xml, self.api_key)
             articles = articles + articleList.articles
             
         return articles
@@ -296,7 +304,7 @@ if __name__ == '__main__':
     
     query_text = """
             ("the laryngoscope"[Journal]) AND 
-            (("2024/03/01"[Date - Publication] : "2025/12/31"[Date - Publication]))
+            (("2024/01/01"[Date - Publication] : "2024/12/31"[Date - Publication]))
             """
     query = PubMedQuery(query_text)
     query_df = query.__getdataframe__()
